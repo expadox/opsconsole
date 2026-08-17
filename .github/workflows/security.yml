@@ -1,0 +1,58 @@
+name: Security Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Secret scan (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: SAST (Semgrep)
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: p/javascript p/typescript p/nextjs p/owasp-top-ten
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Dependency audit (SCA)
+        run: npm audit --audit-level=high
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cdx.json
+
+      # Project 5 (Cloud & IaC Hardening): if config-as-code is added for
+      # Cloudflare/Vercel settings, Checkov scans it here. Left as a
+      # separate, non-blocking step until that IaC exists in the repo.
+      - name: IaC/config scan (Checkov)
+        if: hashFiles('**/*.tf') != ''
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          quiet: true

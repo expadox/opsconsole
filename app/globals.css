@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid theme("colors.active");
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Status dot before every row, instead of a colored badge — reads at a
+     glance the way an actual ops dashboard should. */
+  .status-dot {
+    @apply inline-block h-2 w-2 rounded-full;
+  }
+  .status-dot--active { @apply bg-active; }
+  .status-dot--pending { @apply bg-pending; }
+  .status-dot--danger { @apply bg-danger; }
+  .status-dot--muted { @apply bg-muted; }
+
+  .console-row {
+    @apply grid grid-cols-[auto_1fr_auto_auto] items-center gap-4 border-b border-border px-4 py-3 text-sm;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-sm bg-active px-4 py-2 text-sm font-medium text-panel transition-colors hover:bg-active/90;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-sm border border-border px-4 py-2 text-sm font-medium text-fg transition-colors hover:bg-surface;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded-sm border border-danger px-3 py-1.5 text-xs font-medium text-danger transition-colors hover:bg-danger/10;
+  }
+  .field-label {
+    @apply block text-xs uppercase tracking-wide text-muted mb-1;
+  }
+  .field-input {
+    @apply w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm text-fg focus-visible:border-active;
+  }
+}

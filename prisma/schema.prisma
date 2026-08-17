@@ -1,0 +1,48 @@
+// OpsConsole data model.
+// This app has NO public-facing data — everything behind /admin is
+// privileged by definition. The audit log exists precisely because
+// "who changed what, and when" is the question Project 6's access
+// review has to be able to answer without guessing.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN    // full control: manage team, edit config, view audit log
+  OPERATOR // read-only across team/config, can view audit log
+}
+
+model User {
+  id        String   @id // Clerk user id
+  email     String   @unique
+  role      Role     @default(OPERATOR)
+  active    Boolean  @default(true) // deactivated users keep their row (audit trail), lose access
+  createdAt DateTime @default(now())
+
+  auditEntries AuditLog[]
+}
+
+model ConfigSetting {
+  key       String   @id
+  value     String
+  updatedBy String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  actor     User     @relation(fields: [actorId], references: [id])
+  action    String   // e.g. "user.invited", "user.deactivated", "config.updated"
+  target    String   // the id/key of whatever was acted on
+  metadata  String?  // JSON-encoded details (e.g. old/new value) — never store secrets here
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
